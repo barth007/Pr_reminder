@@ -1,6 +1,7 @@
+// components/email-setup-screen.tsx
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -8,13 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowRight, CheckCircle, Copy, Mail, Settings } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-interface User {
-  name: string
-  email: string
-  image: string
-  slackConnected: boolean
-}
+import type { User } from "@/lib/api/types"
 
 interface EmailSetupScreenProps {
   user: User
@@ -24,12 +19,30 @@ interface EmailSetupScreenProps {
 
 export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSettings }: EmailSetupScreenProps) {
   const [copied, setCopied] = useState(false)
-  const emailAddress = `pr-${Math.random().toString(36).substring(2, 8)}@prreminder.app`
+  
+  // Generate a unique email address based on user ID
+  const emailAddress = useMemo(() => {
+    const userIdShort = user.id.slice(0, 8).replace(/-/g, '')
+    return `pr-${userIdShort}@prreminder.app`
+  }, [user.id])
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(emailAddress)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(emailAddress)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error)
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = emailAddress
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
   }
 
   return (
@@ -45,7 +58,7 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
               <div className="ml-4">
                 <h3 className="text-lg font-medium text-green-800">Slack Connected Successfully!</h3>
                 <p className="text-green-700">
-                  Your Slack workspace is now connected to PR Reminder. You're almost ready to start receiving
+                  Your Slack workspace {user.slack_connection?.team_name ? `"${user.slack_connection.team_name}"` : ''} is now connected to PR Reminder. You're almost ready to start receiving
                   notifications.
                 </p>
               </div>
@@ -64,7 +77,7 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                 </CardDescription>
               </div>
               <Avatar>
-                <AvatarImage src={user.image || "/placeholder.svg"} alt={user.name} />
+                <AvatarImage src={user.profile_image || "/placeholder.svg"} alt={user.name} />
                 <AvatarFallback>
                   {user.name
                     .split(" ")
@@ -85,13 +98,13 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                     </div>
                     <div>
                       <p className="text-sm text-blue-700 font-medium">Your Unique Email Address</p>
-                      <p className="text-lg font-mono font-bold text-blue-900">{emailAddress}</p>
+                      <p className="text-lg font-mono font-bold text-blue-900 break-all">{emailAddress}</p>
                     </div>
                   </div>
                   <Button
                     onClick={copyToClipboard}
                     variant="outline"
-                    className={`${copied ? "bg-green-100 text-green-800 border-green-300" : ""}`}
+                    className={`${copied ? "bg-green-100 text-green-800 border-green-300" : ""} shrink-0`}
                   >
                     {copied ? (
                       <>
@@ -115,6 +128,7 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                 <TabsTrigger value="github">GitHub Setup</TabsTrigger>
                 <TabsTrigger value="gitlab">GitLab Setup</TabsTrigger>
               </TabsList>
+              
               <TabsContent value="github" className="p-4 border rounded-md mt-2">
                 <h3 className="text-lg font-medium mb-4">How to set up with GitHub</h3>
                 <ol className="space-y-6">
@@ -125,17 +139,16 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                     <div>
                       <p className="font-medium">Go to your GitHub repository settings</p>
                       <p className="text-gray-600 mt-1">
-                        Navigate to the repository you want to monitor, click on "Settings" and then "Notifications".
+                        Navigate to the repository you want to monitor, click on "Settings" and then "Notifications" or "Webhooks".
                       </p>
-                      <div className="mt-2 border rounded-md overflow-hidden">
-                        <img
-                          src="/placeholder.svg?height=120&width=400"
-                          alt="GitHub repository settings"
-                          className="w-full h-auto"
-                        />
+                      <div className="mt-2 p-3 bg-gray-100 rounded-md">
+                        <code className="text-sm">
+                          Repository → Settings → Notifications → Email notifications
+                        </code>
                       </div>
                     </div>
                   </li>
+                  
                   <li className="flex">
                     <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold mr-4">
                       2
@@ -143,17 +156,14 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                     <div>
                       <p className="font-medium">Add your unique email address</p>
                       <p className="text-gray-600 mt-1">
-                        Add the email address shown above to receive notifications about pull requests.
+                        Add the email address shown above to receive notifications about pull requests, reviews, and comments.
                       </p>
-                      <div className="mt-2 border rounded-md overflow-hidden">
-                        <img
-                          src="/placeholder.svg?height=120&width=400"
-                          alt="Adding email to GitHub"
-                          className="w-full h-auto"
-                        />
+                      <div className="mt-2 p-3 bg-gray-100 rounded-md">
+                        <code className="text-sm break-all">{emailAddress}</code>
                       </div>
                     </div>
                   </li>
+                  
                   <li className="flex">
                     <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold mr-4">
                       3
@@ -161,13 +171,19 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                     <div>
                       <p className="font-medium">Configure notification settings</p>
                       <p className="text-gray-600 mt-1">
-                        Choose which events should trigger notifications. We recommend enabling notifications for pull
-                        request reviews and comments.
+                        Choose which events should trigger notifications. We recommend enabling:
                       </p>
+                      <ul className="mt-2 space-y-1 text-sm text-gray-600 ml-4">
+                        <li>• Pull request reviews</li>
+                        <li>• Pull request comments</li>
+                        <li>• Pull request status changes</li>
+                        <li>• @mentions in pull requests</li>
+                      </ul>
                     </div>
                   </li>
                 </ol>
               </TabsContent>
+              
               <TabsContent value="gitlab" className="p-4 border rounded-md mt-2">
                 <h3 className="text-lg font-medium mb-4">How to set up with GitLab</h3>
                 <ol className="space-y-6">
@@ -180,8 +196,14 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                       <p className="text-gray-600 mt-1">
                         Navigate to the project you want to monitor, click on "Settings" and then "Integrations".
                       </p>
+                      <div className="mt-2 p-3 bg-gray-100 rounded-md">
+                        <code className="text-sm">
+                          Project → Settings → Integrations → Emails on push
+                        </code>
+                      </div>
                     </div>
                   </li>
+                  
                   <li className="flex">
                     <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold mr-4">
                       2
@@ -191,8 +213,12 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                       <p className="text-gray-600 mt-1">
                         Add the email address shown above as the recipient for merge request notifications.
                       </p>
+                      <div className="mt-2 p-3 bg-gray-100 rounded-md">
+                        <code className="text-sm break-all">{emailAddress}</code>
+                      </div>
                     </div>
                   </li>
+                  
                   <li className="flex">
                     <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold mr-4">
                       3
@@ -200,9 +226,14 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                     <div>
                       <p className="font-medium">Configure notification triggers</p>
                       <p className="text-gray-600 mt-1">
-                        Select which events should trigger notifications. We recommend enabling notifications for merge
-                        request events.
+                        Select which events should trigger notifications:
                       </p>
+                      <ul className="mt-2 space-y-1 text-sm text-gray-600 ml-4">
+                        <li>• Merge request creation</li>
+                        <li>• Merge request updates</li>
+                        <li>• Merge request approvals</li>
+                        <li>• Merge request comments</li>
+                      </ul>
                     </div>
                   </li>
                 </ol>
@@ -216,10 +247,8 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Keep this email address private to prevent unauthorized notifications</li>
                   <li>You can regenerate this email address in settings if needed</li>
-                  <li>
-                    Configure your notification preferences in the settings to control how often you receive Slack
-                    alerts
-                  </li>
+                  <li>Configure your notification preferences in the settings to control how often you receive Slack alerts</li>
+                  <li>Test your setup by creating a test PR or comment after configuration</li>
                 </ul>
               </AlertDescription>
             </Alert>
@@ -242,7 +271,7 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
         <Card>
           <CardHeader>
             <CardTitle>What's Next?</CardTitle>
-            <CardDescription>Follow these steps to complete your setup</CardDescription>
+            <CardDescription>Your setup progress</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -255,15 +284,19 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                   <p className="text-sm text-gray-600">Your Google account is successfully connected</p>
                 </div>
               </div>
+              
               <div className="flex items-start">
                 <Badge className="mt-1 mr-4 bg-green-100 text-green-800 h-6 w-6 flex items-center justify-center p-0 rounded-full">
                   ✓
                 </Badge>
                 <div>
                   <p className="font-medium">Connect Slack Workspace</p>
-                  <p className="text-sm text-gray-600">Your Slack workspace is successfully connected</p>
+                  <p className="text-sm text-gray-600">
+                    Connected to {user.slack_connection?.team_name || 'your Slack workspace'}
+                  </p>
                 </div>
               </div>
+              
               <div className="flex items-start">
                 <Badge className="mt-1 mr-4 bg-blue-100 text-blue-800 h-6 w-6 flex items-center justify-center p-0 rounded-full">
                   3
@@ -273,6 +306,7 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                   <p className="text-sm text-gray-600">Add your unique email to your Git repositories</p>
                 </div>
               </div>
+              
               <div className="flex items-start">
                 <Badge className="mt-1 mr-4 bg-gray-100 text-gray-800 h-6 w-6 flex items-center justify-center p-0 rounded-full">
                   4
