@@ -1,11 +1,9 @@
-// =============================================================================
-// app/auth/callback/page.tsx - Next.js Frontend Auth Callback
-// =============================================================================
+// 📁 app/auth/callback/page.tsx - FIXED with better debugging
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuthStore } from '@/stores/authStore'; // Assuming you're using Zustand
+import { useAuthStore } from '@/stores/authStore';
 
 interface AuthCallbackData {
   success: boolean;
@@ -30,6 +28,10 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        console.log('🔥 AUTH CALLBACK STARTED');
+        console.log('🔍 Current URL:', window.location.href);
+        console.log('🔍 Search params:', Object.fromEntries(searchParams.entries()));
+
         // Parse URL parameters
         const callbackData: AuthCallbackData = {
           success: searchParams.get('success') === 'true',
@@ -44,45 +46,61 @@ export default function AuthCallbackPage() {
           timestamp: searchParams.get('timestamp') || undefined,
         };
 
+        console.log('📦 Parsed callback data:', callbackData);
+
         if (callbackData.success && callbackData.token) {
-          // Success case
           console.log('✅ Authentication successful');
           
-          // Store JWT token
+          // Store JWT token in localStorage
           localStorage.setItem('auth_token', callbackData.token);
+          console.log('💾 Token stored in localStorage');
           
-          // Update auth store
+          // Update auth store with token
           setAuth(callbackData.token, true);
+          console.log('🏪 Auth store updated');
           
-          // Create user object
+          // Create user object with proper structure
           const user = {
             id: callbackData.user_id || '',
             name: callbackData.user_name || '',
             email: callbackData.user_email || '',
-            profile_image: callbackData.profile_image,
+            profile_image: callbackData.profile_image || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
             slack_connection: callbackData.slack_connected
               ? {
-                  team_name: callbackData.slack_team,
-                  connected: true,
+                  id: 'temp-id',
+                  user_id: callbackData.user_id || '',
+                  slack_user_id: 'temp-slack-id',
+                  slack_team_id: 'temp-team-id',
+                  team_name: callbackData.slack_team || 'Unknown Team',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
                 }
-              : null,
+              : undefined,
           };
+          
+          console.log('👤 Created user object:', user);
           
           // Update user store
           setUser(user);
+          console.log('🏪 User store updated');
 
-          console.log(`Welcome ${callbackData.user_name}!`);
-          
-          // Conditional redirect based on Slack connection
-          if (callbackData.slack_connected) {
-            // User has Slack connected, go to dashboard
-            console.log('🎯 Redirecting to dashboard (Slack connected)');
-            router.push('/dashboard');
-          } else {
-            // User needs to connect Slack, go to onboarding
-            console.log('🔗 Redirecting to onboarding (Slack not connected)');
-            router.push('/');
-          }
+          // Clean the URL first (remove query parameters)
+          window.history.replaceState({}, document.title, '/auth/callback');
+          console.log('🧹 URL cleaned');
+
+          // Wait a bit for state to settle
+          setTimeout(() => {
+            // Determine redirect destination
+            if (callbackData.slack_connected) {
+              console.log('🎯 User has Slack connected - redirecting to dashboard');
+              router.push('/dashboard');
+            } else {
+              console.log('🎯 User needs Slack setup - redirecting to onboarding');
+              router.push('/onboarding');
+            }
+          }, 500); // Small delay to ensure state is updated
           
         } else {
           // Error case
@@ -90,19 +108,21 @@ export default function AuthCallbackPage() {
           console.error('❌ Authentication failed:', errorMessage);
           setError(errorMessage);
           
-          // Redirect to login with error after 3 seconds
+          // Redirect to home page with error after 3 seconds
           setTimeout(() => {
-            router.push(`/login?error=${encodeURIComponent(errorMessage)}`);
+            console.log('🔄 Redirecting to home page with error');
+            router.push(`/?error=${encodeURIComponent(errorMessage)}`);
           }, 3000);
         }
         
       } catch (err) {
-        console.error('Error processing auth callback:', err);
+        console.error('💥 Error processing auth callback:', err);
         setError('Failed to process authentication callback');
         
-        // Redirect to login with error
+        // Redirect to home page with error
         setTimeout(() => {
-          router.push('/login?error=callback_processing_failed');
+          console.log('🔄 Redirecting to home page due to error');
+          router.push('/?error=callback_processing_failed');
         }, 3000);
       } finally {
         setLoading(false);
@@ -122,6 +142,9 @@ export default function AuthCallbackPage() {
           </h2>
           <p className="mt-2 text-gray-600">
             Please wait while we complete your login
+          </p>
+          <p className="mt-2 text-xs text-gray-400">
+            Check browser console for detailed logs
           </p>
         </div>
       </div>
@@ -144,7 +167,7 @@ export default function AuthCallbackPage() {
             {error}
           </p>
           <p className="mt-4 text-sm text-gray-500">
-            Redirecting to login page...
+            Redirecting to home page...
           </p>
         </div>
       </div>
@@ -165,6 +188,9 @@ export default function AuthCallbackPage() {
         </h2>
         <p className="mt-2 text-gray-600">
           Setting up your workspace...
+        </p>
+        <p className="mt-2 text-xs text-gray-400">
+          Check browser console for detailed logs
         </p>
       </div>
     </div>
