@@ -39,7 +39,8 @@ export default function DashboardPage() {
       user={user}
       onLogout={logout}
       onNavigateToSettings={handleNavigateToSettings}
-      onTestSlackNotification={testSlackNotification}
+      onTestSlackNotification={async () => { await testSlackNotification(); }}
+
     />
   );
 }

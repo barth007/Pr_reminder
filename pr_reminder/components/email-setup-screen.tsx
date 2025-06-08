@@ -23,7 +23,7 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
   // Generate a unique email address based on user ID
   const emailAddress = useMemo(() => {
     const userIdShort = user.id.slice(0, 8).replace(/-/g, '')
-    return `pr-${userIdShort}@prreminder.app`
+    return `29381b2df1bb94fc4047740b077ec061@inbound.postmarkapp.com`
   }, [user.id])
 
   const copyToClipboard = async () => {

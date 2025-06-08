@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
+import { User } from '@/lib/api/types';
 
 interface AuthCallbackData {
   success: boolean;
@@ -68,17 +69,18 @@ export default function AuthCallbackPage() {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             slack_connection: callbackData.slack_connected
-              ? {
-                  id: 'temp-id',
-                  user_id: callbackData.user_id || '',
-                  slack_user_id: 'temp-slack-id',
-                  slack_team_id: 'temp-team-id',
-                  team_name: callbackData.slack_team || 'Unknown Team',
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
+                ? {
+                    id: 'temp-id',
+                    user_id: callbackData.user_id || '',
+                    slack_user_id: 'temp-slack-id',
+                    slack_team_id: 'temp-team-id',
+                    team_name: callbackData.slack_team || 'Unknown Team',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    connected: true, 
                 }
-              : undefined,
-          };
+                : undefined,
+            };
           
           console.log('👤 Created user object:', user);
           

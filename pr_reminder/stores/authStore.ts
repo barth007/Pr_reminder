@@ -8,7 +8,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  profile_image?: string;
+  profile_image: string | null;
   slack_connection?: {
     team_name?: string;
     connected: boolean;

@@ -33,7 +33,7 @@ export default function SettingsPage() {
       user={user}
       onNavigateToDashboard={handleNavigateToDashboard}
       onLogout={logout}
-      onTestSlackNotification={testSlackNotification}
+      onTestSlackNotification={async () => { await testSlackNotification(); }}
     />
   );
 }
