@@ -1,5 +1,30 @@
-import { User, AuthResponse, SlackConnection } from './types';
-// lib/api/client.ts (UPDATED)
+// lib/api/client.ts (UPDATED with PR endpoints)
+import { User, AuthResponse, SlackConnection, PRNotification } from './types';
+
+// Add new types for PR API responses
+interface PRNotificationList {
+  notifications: PRNotification[];
+  total_count: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  has_next: boolean;
+  has_previous: boolean;
+}
+
+interface PRStats {
+  total_notifications: number;
+  slack_sent: number;
+  pending_slack: number;
+  by_status: Record<string, number>;
+  by_repository: Record<string, number>;
+  forwarded_emails: number;
+  recent_activity: Record<string, number>;
+  oldest_pending_pr?: string;
+  newest_pr?: string;
+  most_active_repo?: string;
+}
+
 class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
@@ -24,7 +49,6 @@ class ApiClient {
     this.token = token;
   }
 
-  // ⭐ NEW: Get current token (for debugging)
   getToken(): string | null {
     return this.token || this.getStoredToken();
   }
@@ -57,19 +81,6 @@ class ApiClient {
 
     try {
       console.log(`🌐 API Request: ${config.method || 'GET'} ${url}`);
-      // Safely log the Authorization header if present and headers is a plain object
-      let authHeader: string | undefined;
-      if (
-        config.headers &&
-        typeof config.headers === 'object' &&
-        !Array.isArray(config.headers)
-      ) {
-        authHeader = (config.headers as Record<string, string>)['Authorization'];
-      }
-      console.log(
-        `🔑 Auth header:`,
-        authHeader ? authHeader.toString().substring(0, 20) + '...' : '(none)'
-      );
       
       const response = await fetch(url, config);
       
@@ -108,34 +119,29 @@ class ApiClient {
     return response;
   }
 
-  // Google OAuth URLs
   getGoogleLoginUrl(): string {
     return `${this.baseUrl}/api/v1/auth/google/login`;
   }
 
   // =============================================================================
-  // SLACK ENDPOINTS - REST APPROACH
+  // SLACK ENDPOINTS
   // =============================================================================
 
-  // ⭐ NEW: Get Slack OAuth URL via authenticated API call
   async getSlackAuthUrl(): Promise<{ auth_url: string; state: string; redirect_uri: string }> {
     console.log('🔗 Getting Slack auth URL from backend...');
     return this.request<{ auth_url: string; state: string; redirect_uri: string }>('/auth/slack/auth-url');
   }
 
-  // Get current Slack connection details
   async getSlackConnection(): Promise<SlackConnection> {
     return this.request<SlackConnection>('/auth/slack/connection');
   }
 
-  // Disconnect Slack
   async disconnectSlack(): Promise<{ message: string }> {
     return this.request('/auth/slack/disconnect', {
       method: 'DELETE',
     });
   }
 
-  // Send test Slack notification
   async testSlackNotification(message?: string): Promise<{ message: string }> {
     return this.request('/auth/slack/test', {
       method: 'POST',
@@ -145,21 +151,130 @@ class ApiClient {
     });
   }
 
-  // Send PR notification to Slack
-  async sendPRNotification(data: {
-    repo_name: string;
-    pr_title: string;
-    pr_url: string;
-  }): Promise<{ message: string }> {
-    return this.request('/auth/slack/notify/pr', {
-      method: 'POST',
-      body: JSON.stringify(data),
+  // =============================================================================
+  // 🆕 PR NOTIFICATION ENDPOINTS
+  // =============================================================================
+
+  async getPRNotifications(params: {
+    status_filter?: string;
+    repo_filter?: string;
+    days_old?: number;
+    slack_sent?: boolean;
+    is_forwarded?: boolean;
+    page?: number;
+    limit?: number;
+    sort_by?: string;
+    sort_order?: string;
+  } = {}): Promise<PRNotificationList> {
+    const searchParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, value.toString());
+      }
+    });
+
+    const queryString = searchParams.toString();
+    const endpoint = `/pr/notifications${queryString ? `?${queryString}` : ''}`;
+    
+    return this.request<PRNotificationList>(endpoint);
+  }
+
+  async getPRNotificationById(id: string): Promise<PRNotification> {
+    return this.request<PRNotification>(`/pr/notifications/${id}`);
+  }
+
+  async deletePRNotification(id: string): Promise<{ message: string }> {
+    return this.request(`/pr/notifications/${id}`, {
+      method: 'DELETE',
     });
   }
 
-  // Check Slack health
-  async checkSlackHealth(): Promise<{ status: string; service: string; slack_configured: boolean }> {
-    return this.request('/auth/slack/health');
+  async getPRStats(): Promise<PRStats> {
+    return this.request<PRStats>('/pr/stats');
+  }
+
+  async getPRSummary(days: number = 7): Promise<any> {
+    return this.request(`/pr/summary?days=${days}`);
+  }
+
+  async getUserRepositories(): Promise<{ repositories: string[] }> {
+    return this.request('/pr/repositories');
+  }
+
+  async markPRSlackSent(id: string): Promise<{ message: string }> {
+    return this.request(`/pr/notifications/${id}/mark-slack-sent`, {
+      method: 'POST',
+    });
+  }
+
+  async getPendingSlackNotifications(limit: number = 50): Promise<PRNotificationList> {
+    return this.request<PRNotificationList>(`/pr/pending-slack?limit=${limit}`);
+  }
+
+  async getOldPRNotifications(
+    days_old: number = 7, 
+    status_filter: string = 'open', 
+    limit: number = 50
+  ): Promise<PRNotificationList> {
+    return this.request<PRNotificationList>(
+      `/pr/old-prs?days_old=${days_old}&status_filter=${status_filter}&limit=${limit}`
+    );
+  }
+
+  async bulkDeleteNotifications(notification_ids: string[]): Promise<any> {
+    return this.request('/pr/notifications/bulk-delete', {
+      method: 'POST',
+      body: JSON.stringify({ notification_ids }),
+    });
+  }
+
+  async bulkMarkSlackSent(notification_ids: string[]): Promise<any> {
+    return this.request('/pr/notifications/bulk-mark-slack-sent', {
+      method: 'POST',
+      body: JSON.stringify({ notification_ids }),
+    });
+  }
+
+  async searchPRNotifications(params: {
+    q: string;
+    fields?: string;
+    date_from?: string;
+    date_to?: string;
+    exact?: boolean;
+  }): Promise<any> {
+    const searchParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, value.toString());
+      }
+    });
+
+    return this.request(`/pr/search?${searchParams.toString()}`);
+  }
+
+  async getRepositoryStats(repo_name: string): Promise<any> {
+    return this.request(`/pr/repositories/${encodeURIComponent(repo_name)}/stats`);
+  }
+
+  async exportPRNotifications(params: {
+    format?: string;
+    days?: number;
+    repo_filter?: string;
+  } = {}): Promise<any> {
+    const searchParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, value.toString());
+      }
+    });
+
+    const queryString = searchParams.toString();
+    const endpoint = `/pr/export${queryString ? `?${queryString}` : ''}`;
+    
+    return this.request(endpoint);
   }
 
   // =============================================================================
