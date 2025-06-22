@@ -51,7 +51,7 @@ export function OnboardingScreen({
             </div>
             <CardTitle className="text-2xl font-bold">Slack Connected!</CardTitle>
             <CardDescription>
-              Your Slack workspace is now connected. Let's set up your email integration.
+              Your Slack workspace is now connected. Let&apos;s set up your email integration.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -122,7 +122,7 @@ export function OnboardingScreen({
           </div>
           <CardTitle className="text-2xl font-bold">Welcome to PR Reminder!</CardTitle>
           <CardDescription>
-            Let's connect your Slack workspace to receive PR notifications
+            Let&apos;s connect your Slack workspace to receive PR notifications
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

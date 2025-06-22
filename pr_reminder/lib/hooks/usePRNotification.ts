@@ -220,7 +220,7 @@ export function usePRNotifications(initialFilters: FilterParams = {}) {
   // Initial load
   useEffect(() => {
     loadNotifications();
-  }, []);
+  }, [loadNotifications]);
 
   return {
     // State

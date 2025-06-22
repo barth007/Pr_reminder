@@ -194,8 +194,8 @@ class ApiClient {
     return this.request<PRStats>('/pr/stats');
   }
 
-  async getPRSummary(days: number = 7): Promise<any> {
-    return this.request(`/pr/summary?days=${days}`);
+  async getPRSummary(days: number = 7): Promise<PRStats> {
+    return this.request<PRStats>(`/pr/summary?days=${days}`);
   }
 
   async getUserRepositories(): Promise<{ repositories: string[] }> {
@@ -222,14 +222,14 @@ class ApiClient {
     );
   }
 
-  async bulkDeleteNotifications(notification_ids: string[]): Promise<any> {
+  async bulkDeleteNotifications(notification_ids: string[]): Promise<{ message: string }> {
     return this.request('/pr/notifications/bulk-delete', {
       method: 'POST',
       body: JSON.stringify({ notification_ids }),
     });
   }
 
-  async bulkMarkSlackSent(notification_ids: string[]): Promise<any> {
+  async bulkMarkSlackSent(notification_ids: string[]): Promise<{ message: string }> {
     return this.request('/pr/notifications/bulk-mark-slack-sent', {
       method: 'POST',
       body: JSON.stringify({ notification_ids }),
@@ -242,7 +242,7 @@ class ApiClient {
     date_from?: string;
     date_to?: string;
     exact?: boolean;
-  }): Promise<any> {
+  }): Promise<{ results: PRNotification[]; total_matches: number }> {
     const searchParams = new URLSearchParams();
     
     Object.entries(params).forEach(([key, value]) => {
@@ -254,15 +254,15 @@ class ApiClient {
     return this.request(`/pr/search?${searchParams.toString()}`);
   }
 
-  async getRepositoryStats(repo_name: string): Promise<any> {
-    return this.request(`/pr/repositories/${encodeURIComponent(repo_name)}/stats`);
+  async getRepositoryStats(repo_name: string): Promise<PRStats> {
+    return this.request<PRStats>(`/pr/repositories/${encodeURIComponent(repo_name)}/stats`);
   }
 
   async exportPRNotifications(params: {
     format?: string;
     days?: number;
     repo_filter?: string;
-  } = {}): Promise<any> {
+  } = {}): Promise<Blob> {
     const searchParams = new URLSearchParams();
     
     Object.entries(params).forEach(([key, value]) => {

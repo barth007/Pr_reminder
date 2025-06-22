@@ -64,7 +64,7 @@ export function getAuthorFromEmail(email: string | null | undefined): string {
 }
 
 // Additional helper function for safe string operations
-export function safeString(value: any): string {
+export function safeString(value: unknown): string {
   if (value === null || value === undefined) {
     return '';
   }

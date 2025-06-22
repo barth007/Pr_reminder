@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { toast } from '@/lib/toast'
 
 export function useToast() {
-  const [toasts, setToasts] = useState<Array<any>>([])
+  const [toasts, setToasts] = useState<Array<unknown>>([])
 
   useEffect(() => {
     const unsubscribe = toast.subscribe(setToasts)
