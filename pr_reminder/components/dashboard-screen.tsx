@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Bell, ExternalLink, LogOut, Search, Settings, Loader2, Trash2, CheckCircle, RefreshCw } from "lucide-react"
 import { usePRNotifications } from "@/lib/hooks/usePRNotification"
 import { formatTimeAgo, getAuthorFromEmail, formatRepoName, formatPRTitle, formatPRNumber } from "@/lib/formatters"
-import type { User } from "@/lib/api/types"
+import type { User, PRStats } from "@/lib/api/types"
 
 interface DashboardScreenProps {
   user: User
@@ -44,7 +44,7 @@ export function DashboardScreen({ user, onLogout, onNavigateToSettings, onTestSl
     refetch
   } = usePRNotifications()
 
-  const [stats, setStats] = useState<any>(null)
+  const [stats, setStats] = useState<PRStats | null>(null)
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
   const [markingIds, setMarkingIds] = useState<Set<string>>(new Set())
 

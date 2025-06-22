@@ -22,7 +22,6 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
   
   // Generate a unique email address based on user ID
   const emailAddress = useMemo(() => {
-    const userIdShort = user.id.slice(0, 8).replace(/-/g, '')
     return `29381b2df1bb94fc4047740b077ec061@inbound.postmarkapp.com`
   }, [user.id])
 
@@ -58,7 +57,7 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
               <div className="ml-4">
                 <h3 className="text-lg font-medium text-green-800">Slack Connected Successfully!</h3>
                 <p className="text-green-700">
-                  Your Slack workspace {user.slack_connection?.team_name ? `"${user.slack_connection.team_name}"` : ''} is now connected to PR Reminder. You're almost ready to start receiving
+                  Your Slack workspace {user.slack_connection?.team_name ? `&quot;${user.slack_connection.team_name}&quot;` : ''} is now connected to PR Reminder. You&apos;re almost ready to start receiving
                   notifications.
                 </p>
               </div>
@@ -139,11 +138,11 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                     <div>
                       <p className="font-medium">Go to your GitHub repository settings</p>
                       <p className="text-gray-600 mt-1">
-                        Navigate to the repository you want to monitor, click on "Settings" and then "Notifications" or "Webhooks".
+                        Navigate to the repository you want to monitor, click on &quot;Settings&quot; and then &quot;Notifications&quot; or &quot;Webhooks&quot;.
                       </p>
                       <div className="mt-2 p-3 bg-gray-100 rounded-md">
                         <code className="text-sm">
-                          Repository → Settings → Notifications → Email notifications
+                          Repository &rarr; Settings &rarr; Notifications &rarr; Email notifications
                         </code>
                       </div>
                     </div>
@@ -194,11 +193,11 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
                     <div>
                       <p className="font-medium">Go to your GitLab project settings</p>
                       <p className="text-gray-600 mt-1">
-                        Navigate to the project you want to monitor, click on "Settings" and then "Integrations".
+                        Navigate to the project you want to monitor, click on &quot;Settings&quot; and then &quot;Integrations&quot;.
                       </p>
                       <div className="mt-2 p-3 bg-gray-100 rounded-md">
                         <code className="text-sm">
-                          Project → Settings → Integrations → Emails on push
+                          Project &rarr; Settings &rarr; Integrations &rarr; Emails on push
                         </code>
                       </div>
                     </div>
@@ -270,7 +269,7 @@ export function EmailSetupScreen({ user, onNavigateToDashboard, onNavigateToSett
         {/* What's Next Card */}
         <Card>
           <CardHeader>
-            <CardTitle>What's Next?</CardTitle>
+            <CardTitle>What&apos;s Next?</CardTitle>
             <CardDescription>Your setup progress</CardDescription>
           </CardHeader>
           <CardContent>

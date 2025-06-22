@@ -4,7 +4,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
-import { User } from '@/lib/api/types';
 
 interface AuthCallbackData {
   success: boolean;
