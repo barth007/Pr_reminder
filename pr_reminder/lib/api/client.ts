@@ -292,6 +292,10 @@ class ApiClient {
   isAuthenticated(): boolean {
     return !!this.token;
   }
+
+  async checkSlackHealth(): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/auth/slack/health');
+  }
 }
 
 export const apiClient = new ApiClient();

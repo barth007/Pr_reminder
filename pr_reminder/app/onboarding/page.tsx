@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { OnboardingScreen } from '@/components/onboarding-screen';
 import { LoadingScreen } from '@/components/loading-screen';
 import { useAuth } from '@/lib/hooks/useAuth';
 
-export default function OnboardingPage() {
+function OnboardingPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading, isAuthenticated, connectSlack, refetch } = useAuth();
@@ -173,5 +173,13 @@ export default function OnboardingPage() {
         connectionMessage={slackMessage}
       />
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <OnboardingPageInner />
+    </Suspense>
   );
 }

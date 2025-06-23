@@ -1,7 +1,7 @@
 // 📁 app/auth/callback/page.tsx - FIXED with better debugging
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -18,7 +18,7 @@ interface AuthCallbackData {
   timestamp?: string;
 }
 
-export default function AuthCallbackPage() {
+function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setAuth, setUser } = useAuthStore();
@@ -195,5 +195,13 @@ export default function AuthCallbackPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthCallbackInner />
+    </Suspense>
   );
 }

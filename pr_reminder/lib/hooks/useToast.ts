@@ -2,8 +2,16 @@
 import { useState, useEffect } from 'react'
 import { toast } from '@/lib/toast'
 
+export interface Toast {
+  id: string;
+  title: string;
+  description?: string;
+  type?: 'success' | 'error' | 'info';
+  duration?: number;
+}
+
 export function useToast() {
-  const [toasts, setToasts] = useState<Array<unknown>>([])
+  const [toasts, setToasts] = useState<Toast[]>([])
 
   useEffect(() => {
     const unsubscribe = toast.subscribe(setToasts)
